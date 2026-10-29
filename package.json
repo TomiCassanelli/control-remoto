@@ -1,0 +1,24 @@
+{
+  "name": "flow-remote",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,magenta \"npm run dev -w @flow-remote/server\" \"npm run dev -w @flow-remote/web\"",
+    "build": "npm run build -w @flow-remote/server && npm run build -w @flow-remote/web",
+    "start": "npm run start -w @flow-remote/server",
+    "autostart:install": "sh scripts/install-autostart.sh",
+    "autostart:uninstall": "sh scripts/uninstall-autostart.sh",
+    "typecheck": "npm run typecheck -w @flow-remote/server && npm run typecheck -w @flow-remote/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "overrides": {
+    "node-forge": "1.4.2",
+    "protobufjs": "7.6.6"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

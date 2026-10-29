@@ -1,0 +1,13 @@
+{
+  "name": "Flow Remote",
+  "short_name": "Flow Remote",
+  "description": "Control remoto local para tu Flow Box",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090b10",
+  "theme_color": "#090b10",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/flow-remote.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
