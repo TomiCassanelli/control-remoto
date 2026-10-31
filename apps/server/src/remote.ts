@@ -122,6 +122,15 @@ export class RemoteController {
     this.remote.sendKey(keys[key], direction);
   }
 
+  channel(channel: string) {
+    if (!this.remote) throw new Error("El control no está conectado");
+    const remote = this.remote;
+    [...channel].forEach((digit, index) => {
+      setTimeout(() => remote.sendKey(keys[`digit${digit}` as RemoteKey], RemoteDirection.SHORT), index * 90);
+    });
+    setTimeout(() => remote.sendKey(RemoteKeyCode.KEYCODE_DPAD_CENTER, RemoteDirection.SHORT), channel.length * 90 + 350);
+  }
+
   text(value: string) {
     if (!this.remote) throw new Error("El control no está conectado");
     const previous = [...this.lastText];

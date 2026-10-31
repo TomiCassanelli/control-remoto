@@ -70,7 +70,7 @@ Después podés usar **Agregar a pantalla de inicio** desde el navegador para ab
 
 El texto se envía en vivo mediante la interfaz IME nativa del protocolo, por lo que admite texto arbitrario, espacios y acentos. **Limpiar campo** reemplaza el contenido por un valor vacío. Algunas apps pueden usar un teclado propio y no aceptar entradas externas.
 
-La pantalla principal también incluye accesos directos a YouTube y Netflix, más dos formas de navegación: touchpad por gestos o cruceta de botones. Los accesos usan Android App Links y requieren que cada aplicación esté instalada y registre su enlace en el firmware del Flow Box.
+La pantalla principal también incluye accesos directos a YouTube, Netflix y otros servicios, navegación por cruceta, favoritos editables y un botón para alternar entre los dos últimos canales. Los accesos usan Android App Links y requieren que cada aplicación esté instalada y registre su enlace en el firmware del Flow Box.
 
 ## Comandos
 
@@ -88,7 +88,7 @@ Durante desarrollo se usa el puerto `8788`; el servicio automático estable perm
 ## Funciones del control
 
 - Home, lista de aplicaciones y accesos a YouTube, Netflix, Prime Video, Apple TV y Disney+.
-- Touchpad, cruceta con pulsación larga y respuesta háptica compatible con el navegador.
-- Teclado numérico, canal anterior y cambio de canal.
+- Cruceta con pulsación larga y respuesta háptica compatible con el navegador.
+- Teclado numérico, favoritos editables, canal anterior y cambio de canal.
 - Búsqueda por aplicación y teclado Android TV en vivo.
 - Estado de volumen/aplicación y sincronización entre celulares conectados.

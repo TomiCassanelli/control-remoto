@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { AppWindow, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ChevronDown, ChevronUp, CirclePower, Delete, Grid3X3, Hand, Home, Keyboard, Play, RotateCcw, Search, Tv, Volume1, Volume2, VolumeX, Wifi } from "lucide-react";
-import { siAppletv, siHbo, siNetflix, siYoutube } from "simple-icons";
+import { AppWindow, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, ChevronUp, CirclePower, Delete, Gamepad2, Grid3X3, Home, Keyboard, Pencil, Play, RotateCcw, Search, Star, Volume1, Volume2, VolumeX, Wifi, X } from "lucide-react";
+import { siAppletv, siHbo, siNetflix, siPrimevideo, siYoutube } from "simple-icons";
 import { useRemote } from "./useRemote";
 
 const KeyButton = ({ label, icon, onPress, className = "" }: { label: string; icon: React.ReactNode; onPress: () => void; className?: string }) => (
@@ -13,14 +13,14 @@ const BrandIcon = ({ icon }: { icon: { path: string; title: string } }) => (
 
 const DisneyLogo = () => <img className="disney-logo" src="https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg" alt="Disney+" />;
 
-const PrimeSmile = () => (
-  <svg className="prime-smile" role="img" aria-label="Prime Video" viewBox="0 0 72 32">
-    <path d="M8 10.5c13.4 9.4 34.3 12.2 53.7 2.7" />
-    <path d="m54.8 9.6 8.1 2.1-3.2 7.7" />
+const RemoteLogo = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <rect x="6.5" y="2" width="11" height="20" rx="4" />
+    <circle cx="12" cy="6" r="1.4" />
+    <circle cx="12" cy="12" r="3.2" />
+    <path d="M12 9.8v1.1M12 13.1v1.1M9.8 12h1.1M13.1 12h1.1M9.5 18h1M13.5 18h1" />
   </svg>
 );
-
-const HboMaxLogo = () => <span className="hbo-max-logo" aria-label="HBO Max"><BrandIcon icon={siHbo} /></span>;
 
 const HoldButton = ({ label, remoteKey, sendKey, className = "", children }: { label: string; remoteKey: string; sendKey: (key: string, action?: "short" | "start" | "end") => void; className?: string; children: React.ReactNode }) => {
   const timer = useRef<number | undefined>(undefined);
@@ -34,60 +34,43 @@ const HoldButton = ({ label, remoteKey, sendKey, className = "", children }: { l
   return <button className={className} aria-label={label} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); holding.current = false; timer.current = window.setTimeout(() => { holding.current = true; sendKey(remoteKey, "start"); }, 380); }} onPointerUp={release} onPointerCancel={() => { if (timer.current) window.clearTimeout(timer.current); if (holding.current) sendKey(remoteKey, "end"); holding.current = false; }}>{children}</button>;
 };
 
-const Touchpad = ({ onKey }: { onKey: (key: string) => void }) => {
-  const start = useRef<{ x: number; y: number; fromLeftEdge: boolean } | undefined>(undefined);
-  const tapTimer = useRef<number | undefined>(undefined);
-  const finish = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (!start.current) return;
-    const origin = start.current;
-    const dx = event.clientX - origin.x;
-    const dy = event.clientY - origin.y;
-    start.current = undefined;
-    const distance = Math.max(Math.abs(dx), Math.abs(dy));
-    if (distance < 14) {
-      if (tapTimer.current) {
-        window.clearTimeout(tapTimer.current);
-        tapTimer.current = undefined;
-        return onKey("playPause");
-      }
-      tapTimer.current = window.setTimeout(() => { tapTimer.current = undefined; onKey("ok"); }, 230);
-      return;
-    }
-    if (origin.fromLeftEdge && dx > 70 && Math.abs(dx) > Math.abs(dy)) return onKey("back");
-    const direction = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up");
-    const steps = Math.min(4, Math.max(1, Math.round(distance / 55)));
-    for (let index = 0; index < steps; index++) onKey(direction);
-  };
-  return (
-    <button
-      className="touchpad"
-      onPointerDown={(event) => { const bounds = event.currentTarget.getBoundingClientRect(); start.current = { x: event.clientX, y: event.clientY, fromLeftEdge: event.clientX - bounds.left < 44 }; event.currentTarget.setPointerCapture(event.pointerId); }}
-      onPointerUp={finish}
-      onPointerCancel={() => { start.current = undefined; }}
-      aria-label="Panel táctil: deslizá para navegar y tocá para aceptar"
-    >
-      <Hand />
-      <b>Deslizá para navegar</b>
-      <span>Toque: OK · doble toque: pausa · borde izquierdo: volver</span>
-    </button>
-  );
-};
-
 export function App() {
-  const { devices, status, message, host, deviceState, remoteText, send } = useRemote();
+  const { devices, status, message, host, remoteText, send } = useRemote();
   const [manualHost, setManualHost] = useState("");
   const [pairCode, setPairCode] = useState("");
   const [text, setText] = useState("");
-  const [navigation, setNavigation] = useState<"touchpad" | "buttons">("buttons");
-  const [tab, setTab] = useState<"control" | "apps" | "channels" | "keyboard">("control");
+  const [tab, setTab] = useState<"control" | "apps" | "channels" | "keyboard">("channels");
   const [searchApp, setSearchApp] = useState("youtube");
   const [appSearch, setAppSearch] = useState("");
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("flow-remote-favorite-channels") ?? "null");
+      return Array.isArray(saved) && saved.length ? saved.filter((value): value is string => typeof value === "string" && /^\d{1,4}$/.test(value)) : ["10", "12", "101", "109", "123"];
+    } catch { return ["10", "12", "101", "109", "123"]; }
+  });
+  const [editingFavorites, setEditingFavorites] = useState(false);
+  const [favoritesDraft, setFavoritesDraft] = useState("");
   const connected = status === "connected";
   const key = (value: string, action: "short" | "start" | "end" = "short") => {
     if (action !== "end") navigator.vibrate?.(8);
     send({ type: "key", key: value, action });
   };
   useEffect(() => { setText(remoteText); }, [remoteText]);
+  useEffect(() => { localStorage.setItem("flow-remote-favorite-channels", JSON.stringify(favorites)); }, [favorites]);
+
+  const startEditingFavorites = () => {
+    setFavoritesDraft(favorites.join(", "));
+    setEditingFavorites(true);
+  };
+  const saveFavorites = () => {
+    const next = [...new Set(favoritesDraft.split(/[\s,;]+/).map((value) => value.replace(/\D/g, "")).filter((value) => /^\d{1,4}$/.test(value)))].slice(0, 12);
+    setFavorites(next);
+    setEditingFavorites(false);
+  };
+  const tuneChannel = (channel: string) => {
+    navigator.vibrate?.(10);
+    send({ type: "channel", channel });
+  };
 
   const openSearch = () => {
     const query = encodeURIComponent(appSearch.trim());
@@ -106,18 +89,15 @@ export function App() {
   return (
     <main className="shell">
       <header className="topbar">
-        <div className="brand-mark">flow<span>●</span></div>
-        <div className="brand-copy"><p className="eyebrow">CONTROL REMOTO</p><h1>Flow Remote</h1></div>
+        <div className="brand-mark"><RemoteLogo /></div>
+        <div className="brand-copy"><h1>Control Remoto</h1></div>
         <button className="power" onClick={() => key("power")} disabled={!connected} aria-label="Encender o apagar"><CirclePower /></button>
       </header>
 
-      <section className={`status-card ${status}`}>
+      {!connected && <section className={`status-card ${status}`}>
         <span className="status-dot" />
-        <div className="status-copy"><strong>{connected ? "Conectado" : status === "pairing" ? "Vinculando" : status === "connecting" ? "Conectando" : status === "error" ? "Atención" : "Buscando dispositivos"}</strong><p>{message}</p></div>
-        {connected && <span className="status-room"><Tv /> {host ?? "Flow Box"}</span>}
-      </section>
-
-      {connected && (deviceState.app || deviceState.volume || deviceState.powered !== undefined) && <div className="device-state"><span>{deviceState.powered === false ? "En espera" : deviceState.app ? deviceState.app.split(".").at(-1) : "Flow Box activo"}</span>{deviceState.volume && <span>{deviceState.volume.muted ? "Silencio" : `Volumen ${deviceState.volume.level}/${deviceState.volume.maximum}`}</span>}</div>}
+        <div className="status-copy"><strong>{status === "pairing" ? "Vinculando" : status === "connecting" ? "Conectando" : status === "error" ? "Atención" : "Buscando dispositivos"}</strong><p>{message}</p></div>
+      </section>}
 
       {(status === "idle" || status === "error") && (
         <section className="setup panel">
@@ -144,31 +124,24 @@ export function App() {
         </div>}
         <div className={`tab-stage panel tab-stage-${tab}`}>
         {tab === "apps" && <div className="app-launcher">
-          <button onClick={() => key("home")}><Home /><span>Home</span></button>
-          <button onClick={() => key("apps")}><Grid3X3 /><span>Apps</span></button>
-          <button className="youtube" onClick={() => send({ type: "link", url: "https://www.youtube.com/" })}><BrandIcon icon={siYoutube} /><span>YouTube</span></button>
-          <button className="netflix" onClick={() => send({ type: "link", url: "https://www.netflix.com/browse" })}><BrandIcon icon={siNetflix} /><span>Netflix</span></button>
-          <button className="prime" onClick={() => send({ type: "link", url: "https://app.primevideo.com/" })}><PrimeSmile /><span>Prime Video</span></button>
-          <button className="apple" onClick={() => send({ type: "link", url: "https://tv.apple.com/" })}><BrandIcon icon={siAppletv} /><span>Apple TV</span></button>
-          <button className="disney" onClick={() => send({ type: "link", url: "https://www.disneyplus.com/" })}><DisneyLogo /><span>Disney+</span></button>
-          <button className="hbo" onClick={() => send({ type: "link", url: "https://play.max.com/" })}><HboMaxLogo /><span>HBO Max</span></button>
+          <div className="app-cell"><button aria-label="Inicio" onClick={() => key("home")}><Home /></button></div>
+          <div className="app-cell"><button aria-label="Aplicaciones" onClick={() => key("apps")}><Grid3X3 /></button></div>
+          <div className="app-cell"><button className="youtube" aria-label="YouTube" onClick={() => send({ type: "link", url: "https://www.youtube.com/" })}><BrandIcon icon={siYoutube} /></button></div>
+          <div className="app-cell"><button className="netflix" aria-label="Netflix" onClick={() => send({ type: "link", url: "nflx://www.netflix.com/Browse" })}><BrandIcon icon={siNetflix} /></button></div>
+          <div className="app-cell"><button className="prime" aria-label="Prime Video" onClick={() => send({ type: "link", url: "https://app.primevideo.com/" })}><BrandIcon icon={siPrimevideo} /></button></div>
+          <div className="app-cell"><button className="apple" aria-label="Apple TV" onClick={() => send({ type: "link", url: "https://tv.apple.com/" })}><BrandIcon icon={siAppletv} /></button></div>
+          <div className="app-cell"><button className="disney" aria-label="Disney+" onClick={() => send({ type: "link", url: "https://www.disneyplus.com/" })}><DisneyLogo /></button></div>
+          <div className="app-cell"><button className="hbo" aria-label="HBO Max" onClick={() => send({ type: "link", url: "https://play.max.com/" })}><BrandIcon icon={siHbo} /></button></div>
         </div>}
 
         {tab === "control" && <>
-        <div className="navigation-switch" role="group" aria-label="Modo de navegación">
-          <button aria-pressed={navigation === "touchpad"} className={navigation === "touchpad" ? "active" : ""} onClick={() => setNavigation("touchpad")}><Hand /> Touchpad</button>
-          <button aria-pressed={navigation === "buttons"} className={navigation === "buttons" ? "active" : ""} onClick={() => setNavigation("buttons")}><Grid3X3 /> Botones</button>
+        <div className="dpad">
+          <HoldButton className="up" label="Arriba" remoteKey="up" sendKey={key}><ArrowUp /></HoldButton>
+          <HoldButton className="left" label="Izquierda" remoteKey="left" sendKey={key}><ArrowLeft /></HoldButton>
+          <HoldButton className="ok" label="Aceptar" remoteKey="ok" sendKey={key}>OK</HoldButton>
+          <HoldButton className="right" label="Derecha" remoteKey="right" sendKey={key}><ArrowRight /></HoldButton>
+          <HoldButton className="down" label="Abajo" remoteKey="down" sendKey={key}><ArrowDown /></HoldButton>
         </div>
-
-        {navigation === "touchpad" ? <Touchpad onKey={key} /> : (
-          <div className="dpad">
-            <HoldButton className="up" label="Arriba" remoteKey="up" sendKey={key}><ArrowUp /></HoldButton>
-            <HoldButton className="left" label="Izquierda" remoteKey="left" sendKey={key}><ArrowLeft /></HoldButton>
-            <HoldButton className="ok" label="Aceptar" remoteKey="ok" sendKey={key}>OK</HoldButton>
-            <HoldButton className="right" label="Derecha" remoteKey="right" sendKey={key}><ArrowRight /></HoldButton>
-            <HoldButton className="down" label="Abajo" remoteKey="down" sendKey={key}><ArrowDown /></HoldButton>
-          </div>
-        )}
 
         <div className="quick-row">
           <KeyButton label="Volver" icon={<RotateCcw />} onPress={() => key("back")} />
@@ -184,7 +157,16 @@ export function App() {
         </>}
 
         {tab === "channels" && <div className="channel-panel">
-          <div className="number-pad">{[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => <button key={digit} onClick={() => key(`digit${digit}`)}>{digit}</button>)}<button className="zero" onClick={() => key("digit0")}>0</button></div>
+          <div className="favorites">
+            <div className="favorites-heading"><span><Star /> Favoritos</span>{editingFavorites ? <button className="edit-favorites cancel" onClick={() => setEditingFavorites(false)} aria-label="Cancelar edición"><X /></button> : <button className="edit-favorites" onClick={startEditingFavorites}><Pencil /> Editar</button>}</div>
+            {editingFavorites ? <div className="favorites-editor"><input value={favoritesDraft} onChange={(event) => setFavoritesDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") saveFavorites(); }} inputMode="numeric" placeholder="10, 12, 101…" autoFocus /><button onClick={saveFavorites}><Check /> Guardar</button></div> : <div className="favorite-list">{favorites.length ? favorites.map((channel) => <button key={channel} onClick={() => tuneChannel(channel)}>{channel}</button>) : <button className="empty-favorites" onClick={startEditingFavorites}>Agregar canales</button>}</div>}
+          </div>
+          <div className="number-pad">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => <button key={digit} onClick={() => key(`digit${digit}`)}>{digit}</button>)}
+            <button className="number-volume" onClick={() => key("volumeDown")} aria-label="Bajar volumen"><Volume1 /><span>Bajar</span></button>
+            <button className="zero" onClick={() => key("digit0")}>0</button>
+            <button className="number-volume" onClick={() => key("volumeUp")} aria-label="Subir volumen"><Volume2 /><span>Subir</span></button>
+          </div>
           <div className="channel-controls">
             <button onClick={() => key("channelDown")}><ChevronDown /><span>Canal −</span></button>
             <button onClick={() => key("previousChannel")}><RotateCcw /><span>Anterior</span></button>
@@ -210,9 +192,9 @@ export function App() {
       </section>
 
       {connected && <nav className="bottom-nav" aria-label="Secciones del control">
-        <button aria-current={tab === "control" ? "page" : undefined} className={tab === "control" ? "active" : ""} onClick={() => setTab("control")}><Hand /><span>Control</span></button>
-        <button aria-current={tab === "apps" ? "page" : undefined} className={tab === "apps" ? "active" : ""} onClick={() => setTab("apps")}><AppWindow /><span>Apps</span></button>
         <button aria-current={tab === "channels" ? "page" : undefined} className={tab === "channels" ? "active" : ""} onClick={() => setTab("channels")}><Grid3X3 /><span>Canales</span></button>
+        <button aria-current={tab === "control" ? "page" : undefined} className={tab === "control" ? "active" : ""} onClick={() => setTab("control")}><Gamepad2 /><span>Control</span></button>
+        <button aria-current={tab === "apps" ? "page" : undefined} className={tab === "apps" ? "active" : ""} onClick={() => setTab("apps")}><AppWindow /><span>Apps</span></button>
         <button aria-current={tab === "keyboard" ? "page" : undefined} className={tab === "keyboard" ? "active" : ""} onClick={() => setTab("keyboard")}><Keyboard /><span>Teclado</span></button>
       </nav>}
 

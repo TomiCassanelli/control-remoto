@@ -32,6 +32,7 @@ const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("probe"), host: z.string().min(1) }),
   z.object({ type: z.literal("pair"), code: z.string().regex(/^[A-Za-z0-9]{6}$/) }),
   z.object({ type: z.literal("key"), key: z.enum(["home", "back", "up", "down", "left", "right", "ok", "volumeUp", "volumeDown", "mute", "power", "playPause", "delete", "apps", "channelUp", "channelDown", "previousChannel", "digit0", "digit1", "digit2", "digit3", "digit4", "digit5", "digit6", "digit7", "digit8", "digit9"]), action: z.enum(["short", "start", "end"]).optional() }),
+  z.object({ type: z.literal("channel"), channel: z.string().regex(/^\d{1,4}$/) }),
   z.object({ type: z.literal("text"), value: z.string().max(500) }),
   z.object({ type: z.literal("clear-text") }),
   z.object({ type: z.literal("link"), url: z.url() }),
@@ -63,6 +64,7 @@ wss.on("connection", (socket) => {
       }
       if (command.type === "pair") remote.pair(command.code);
       if (command.type === "key") remote.key(command.key as RemoteKey, command.action);
+      if (command.type === "channel") remote.channel(command.channel);
       if (command.type === "text") remote.text(command.value);
       if (command.type === "clear-text") remote.clearText();
       if (command.type === "link") remote.link(command.url);
